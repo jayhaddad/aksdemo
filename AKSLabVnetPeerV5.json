@@ -1,0 +1,1454 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "5.0.0.0",
+    "parameters": {
+
+        "RtAppGW": {
+            "type": "string",
+            "defaultValue": "RT-AppGW",
+            "metadata": {
+                "description": "The name of the Application Gateway Route Table for Gateway Manager access"
+            }
+        },
+        "RTOnpremises": {
+            "type": "string",
+            "defaultValue": "RT-to-Onpremises",
+            "metadata": {
+                "description": "The name of the Route Table for 0.0.0.0/0 to on-premises"
+            }
+        },
+        "RTAKSProd": {
+            "type": "string",
+            "defaultValue": "RT-AKS-to-Onpremises",
+            "metadata": {
+                "description": "The name of the Route Table for 0.0.0.0/0 to on-premises"
+            }
+        },
+        "RTAzure": {
+            "type": "string",
+            "defaultValue": "RT-to-Azure",
+            "metadata": {
+                "description": "The name of the Route Table from on-premises to Azure"
+            }
+        },
+        "BastionHost": {
+            "type": "string",
+            "defaultValue": "Bastion",
+            "metadata": {
+                "description": "The name of the Bastion Host"
+            }
+        },
+        "BastionIP": {
+            "type": "string",
+            "defaultValue": "Bastion-PIP",
+            "metadata": {
+                "description": "The name of the Bastion Host Public IP"
+            }
+        },
+        "ManagedIdentity": {
+            "type": "string",
+            "defaultValue": "Lab-Identity",
+            "metadata": {
+                "description": "The name of the Managed Identity"
+            }
+        },
+        "AppGWName": {
+            "type": "string",
+            "defaultValue": "Prod-AppGW-01",
+            "metadata": {
+                "description": "The name of the Application Gateway"
+            }
+        },
+        "AppGWNamePiP": {
+            "type": "string",
+            "defaultValue": "Prod-AppGW-01-PiP",
+            "metadata": {
+                "description": "The name of the AppGW Public IP"
+            }
+        },
+        
+        "FWName": {
+            "type": "string",
+            "defaultValue": "FW-01",
+            "metadata": {
+                "description": "The name of the Azure Firewall"
+            }
+        },
+        "FWPolName": {
+            "type": "string",
+            "metadata": {
+                "description": "Firewall Policy Name"
+            }
+
+        },
+        "FWPolLoc": {
+            "type": "string",
+            "metadata": {
+                "description": "Firewall Policy location"
+            }
+
+        },
+
+        "FWPubIp": {
+            "type": "string",
+            "defaultValue": "FW-01-PIP",
+            "metadata": {
+                "description": "The name of the Azure Firewall Public IP"
+            }
+        },
+        "FWPubIp2": {
+           "type": "string",
+           "defaultValue": "FW-01-PIP2",
+           "metadata": {
+               "description": "Azure Firewall Management Public IP"
+           }   
+
+        },
+        "FWZones": {
+            "type": "array",
+            "defaultValue": ["1", "2", "3"],
+            "metadata": {
+                "description": "The Zones the of the Azure Firewall 1,2,3"
+            }
+        },
+        "FWTier": {
+            "type": "string",
+            "defaultValue": "Standard",
+            "allowedValues": [
+                "Standard",
+                "Premium"
+            ],
+            "metadata": {
+                "description": "The Azure Firewall Teir"
+            }
+        },
+        "WinServ": {
+            "type": "string",
+            "defaultValue": "NS-01",
+            "metadata": {
+                "description": "The name of the Windows DNS Server"
+            }
+        },
+        "Username": {
+            "type": "string",
+            "defaultValue": "xadmin",
+            "metadata": {
+                "description": "Administrative Account"
+            }
+
+        },
+        "Password": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Administrative Password"
+            }
+        },
+        "virtualNetworkName": {
+            "type": "string",
+            "defaultValue": "PROD-HUB-VNET",
+            "metadata": {
+                "description": "The name of the Hub virtual network provisioned for the deployment"
+            }
+        },
+        "addressPrefix": {
+            "type": "string",
+            "defaultValue": "10.255.0.0/23",
+            "metadata": {
+                "description": "Hub Virtual Network address CIDR."
+            }
+        },
+        "Gateway": {
+            "type": "string",
+            "defaultValue": "GatewaySubnet",
+            "allowedValues": [
+                "GatewaySubnet"
+            ],
+            "metadata": {
+                "description": "Gateway subnet for the Hub virtual network"
+            }
+        },
+        "GwsubnetPrefix": {
+            "type": "string",
+            "defaultValue": "10.255.0.0/27",
+            "metadata": {
+                "description": "Enter the CIDR address for the GatewaySubnet"
+            }
+        },
+        "FirstSubnetName": {
+            "type": "string",
+            "defaultValue": "AzureFirewallSubnet",
+            "metadata": {
+                "description": "Azure Firewall subnet for the Hub virtual network"
+            }
+        },
+        "FirstsubnetPrefix": {
+            "type": "string",
+            "defaultValue": "10.255.0.64/26",
+            "metadata": {
+                "description": "Enter the CIDR address for the first Hub subnet"
+            }
+        },
+        "SecondSubnetName": {
+            "type": "string",
+            "defaultValue": "AzureFirewallManagementSubnet",
+            "metadata": {
+                "description": "Azure Firewall Management Subnet for the Hub virtual network"
+            }
+        },
+        "SecondsubnetPrefix": {
+            "type": "string",
+            "defaultValue": "10.255.0.128/26",
+            "metadata": {
+                "description": "Enter the CIDR address for the Hub Azure Firewall Management Subnet"
+            }
+        },
+        "ThirdSubnetName": {
+            "type": "string",
+            "defaultValue": "AzureBastionSubnet",
+            "metadata": {
+                "description": "Azure Bastion Subnet Hub virtual network"
+            }
+        },
+        "ThirdsubnetPrefix": {
+            "type": "string",
+            "defaultValue": "10.255.0.192/26",
+            "metadata": {
+                "description": "Enter the CIDR address for the Hub Azure Bastion Subnet"
+            }
+        },
+        "FourthSubnetName": {
+            "type": "string",
+            "defaultValue": "MANAGEMENT-SUBNET",
+            "metadata": {
+                "description": "Enter the CIDR address subnet for the Management subnet for Hub virtual network"
+            }
+        },
+        "FourthsubnetPrefix": {
+            "type": "string",
+            "defaultValue": "10.255.1.0/26",
+            "metadata": {
+                "description": "Enter the CIDR address for the Management Subnet"
+            }
+        },
+        "FifthSubnetName": {
+            "type": "string",
+            "defaultValue": "SHAREDSERVICES-SUBNET",
+            "metadata": {
+                "description": "Enter name of the subnet Shared Services in the Hub virtual network"
+            }
+        },
+        "FifthsubnetPrefix": {
+            "type": "string",
+            "defaultValue": "10.255.1.64/26",
+            "metadata": {
+                "description": "Enter the CIDR address for the Shared Services in the Hub virtual network"
+            }
+        },
+        "ProdvirtualNetworkName": {
+            "type": "string",
+            "defaultValue": "PROD-VNET",
+            "metadata": {
+                "description": "The name of the Production virtual network for the deployment"
+            }
+        },
+        "prodaddressPrefix": {
+            "type": "string",
+            "defaultValue": "10.254.0.0/24",
+            "metadata": {
+                "description": "Virtual Network address CIDR."
+            }
+        },
+
+        "ProdFirstSubnetName": {
+            "type": "string",
+            "defaultValue": "PROD-APPGATEWAY-SUBNET",
+            "metadata": {
+                "description": "First subnet for the virtual network"
+            }
+        },
+        "ProdFirstsubnetPrefix": {
+            "type": "string",
+            "defaultValue": "10.254.0.0/27",
+            "metadata": {
+                "description": "Enter the CIDR address for the first prod subnet"
+            }
+        },
+        "ProdSecondSubnetName": {
+            "type": "string",
+            "defaultValue": "PROD-AKS-SUBNET",
+            "metadata": {
+                "description": "Second subnet for the virtual network"
+            }
+        },
+        "ProdSecondsubnetPrefix": {
+            "type": "string",
+            "defaultValue": "10.254.0.64/26",
+            "metadata": {
+                "description": "Enter the CIDR address for the second prod subnet"
+            }
+        },
+        "ProdThirdSubnetName": {
+            "type": "string",
+            "defaultValue": "PROD-DATA-SUBNET",
+            "metadata": {
+                "description": "Third subnet for the virtual network"
+            }
+        },
+        "ProdThirdsubnetPrefix": {
+            "type": "string",
+            "defaultValue": "10.254.0.128/26",
+            "metadata": {
+                "description": "Enter the CIDR address for the third prod subnet"
+            }
+        },
+        "DevvirtualNetworkName": {
+            "type": "string",
+            "defaultValue": "DEV-VNET",
+            "metadata": {
+                "description": "The name of the Development virtual network provisioned for the deployment"
+            }
+        },
+        "devaddressPrefix": {
+            "type": "string",
+            "defaultValue": "10.253.0.0/24",
+            "metadata": {
+                "description": "Virtual Network address CIDR."
+            }
+        },
+        "DevFirstSubnetName": {
+            "type": "string",
+            "defaultValue": "DEV-APPGATEWAY-SUBNET",
+            "metadata": {
+                "description": "First subnet for the Development virtual network"
+            }
+        },
+        "DevFirstsubnetPrefix": {
+            "type": "string",
+            "defaultValue": "10.253.0.0/27",
+            "metadata": {
+                "description": "Enter the CIDR address for the first dev subnet"
+            }
+        },
+        "DevSecondSubnetName": {
+            "type": "string",
+            "defaultValue": "DEV-AKS-SUBNET",
+            "metadata": {
+                "description": "Second subnet for the Development virtual network"
+            }
+        },
+        "DevSecondsubnetPrefix": {
+            "type": "string",
+            "defaultValue": "10.253.0.64/26",
+            "metadata": {
+                "description": "Enter the CIDR address for the third prod subnet"
+            }
+        },
+        "DevThirdSubnetName": {
+            "type": "string",
+            "defaultValue": "DEV-DATA-SUBNET",
+            "metadata": {
+                "description": "Third subnet for the Development virtual network"
+            }
+        },
+        "DevThirdsubnetPrefix": {
+            "type": "string",
+            "defaultValue": "10.253.0.128/28",
+            "metadata": {
+                "description": "Third the CIDR address for the third prod subnet"
+            }
+        },
+        "DNSServerAddress": {
+            "type": "array",
+            "metadata": {
+                "Description": "The DNS address(es) of the DNS Server(s) used by the VNETS"
+            }
+        }
+    },
+    "variables": {
+        "publicIPRef": "[resourceId('Microsoft.Network/publicIPAddresses/', parameters('AppGWNamePiP'))]",
+        "HubvNETtoProdvNETPeeringName": "[concat(parameters('virtualNetworkName'), '-', parameters('ProdvirtualNetworkName'))]",
+        "ProdvNettoHubvNetPeeringName": "[concat(parameters('ProdvirtualNetworkName'), '-', parameters('virtualNetworkName'))]",
+        "HubvNETtoDevvNETPeeringName": "[concat(parameters('virtualNetworkName'), '-', parameters('DevvirtualNetworkName'))]",
+        "DevvNettoHubvNetPeeringName": "[concat(parameters('DevvirtualNetworkName'), '-', parameters('virtualNetworkName'))]"
+        
+
+    },
+    "resources": [
+
+        //Creating NSG for Shared Services Subnet 
+        {
+            "name": "[concat(parameters('FifthSubnetName'),'-NSG')]",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-11-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "RDP Rules",
+                        "properties": {
+                            "description": "description",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "3389",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "DNS TCP 53",
+                        "properties": {
+                            "description": "description",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "53",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 110,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "DNS UDP 53",
+                        "properties": {
+                            "description": "description",
+                            "protocol": "UDP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "53",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 120,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "SSH Access",
+                        "properties": {
+                            "description": "description",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 130,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "HTTPS Access",
+                        "properties": {
+                            "description": "description",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "443",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 140,
+                            "direction": "Inbound"
+                        }
+                    }
+
+                ]
+            }
+        },
+
+        // Creating On-premises Office
+
+        {
+            "name": "ONPREM-OFFICE",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-11-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "On-premises Office"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "192.168.0.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "GatewaySubnet",
+                        "properties": {
+                            "addressPrefix": "192.168.0.0/27"
+                        }
+                    },
+                    {
+                        "name": "LAN-Subnet",
+                        "properties": {
+                            "addressPrefix": "192.168.0.64/26"
+                        }
+                    }
+                ]
+            }
+        },
+
+        // Creating Route Tables
+
+        {
+            "name": "[parameters('RtAppGW')]",
+            "type": "Microsoft.Network/routeTables",
+            "apiVersion": "2020-11-01",
+            "location": "[resourceGroup().location]",
+            "tags": {},
+            "properties": {
+                "routes": [
+                    {
+                        "name": "GatewayManager",
+                        "properties": {
+                            "addressPrefix": "GatewayManager",
+                            "nextHopType": "Internet"
+
+                        }
+                    }
+                ],
+                "disableBgpRoutePropagation": true
+            }
+        },
+        {
+            "name": "[parameters('RTOnpremises')]",
+            "type": "Microsoft.Network/routeTables",
+            "apiVersion": "2020-11-01",
+            "location": "[resourceGroup().location]",
+            "tags": {},
+            "properties": {
+                "routes": [
+                    {
+                        "name": "On-Premises",
+                        "properties": {
+                            "addressPrefix": "0.0.0.0/0",
+                            "nextHopType": "VirtualAppliance",
+                            "nextHopIpAddress": "10.255.0.36"
+                        }
+                    }
+                ],
+                "disableBgpRoutePropagation": true
+            }
+        },
+        {
+            "name": "[parameters('RTAKSProd')]",
+            "type": "Microsoft.Network/routeTables",
+            "apiVersion": "2020-11-01",
+            "location": "[resourceGroup().location]",
+            "tags": {},
+            "properties": {
+                "routes": [
+                    {
+                        "name": "On-Premises",
+                        "properties": {
+                            "addressPrefix": "0.0.0.0/0",
+                            "nextHopType": "VirtualAppliance",
+                            "nextHopIpAddress": "10.255.0.36"
+                        }
+                    }
+                ],
+                "disableBgpRoutePropagation": true
+            }
+        },
+        {
+            "name": "[parameters('RTAzure')]",
+            "type": "Microsoft.Network/routeTables",
+            "apiVersion": "2020-11-01",
+            "location": "[resourceGroup().location]",
+            "tags": {},
+            "properties": {
+                "routes": [
+                    {
+                        "name": "Towards-Hub-Vnet",
+                        "properties": {
+                            "addressPrefix": "10.255.0.0/23",
+                            "nextHopType": "VirtualAppliance",
+                            "nextHopIpAddress": "10.255.0.36"
+                        }
+                    },
+                    {
+                        "name": "Towards-Prod-Vnet",
+                        "properties": {
+                            "addressPrefix": "10.254.0.0/24",
+                            "nextHopType": "VirtualAppliance",
+                            "nextHopIpAddress": "10.255.0.36"
+                        }
+                    },
+                    {
+                        "name": "Towards-Dev-Vnet",
+                        "properties": {
+                            "addressPrefix": "10.253.0.0/24",
+                            "nextHopType": "VirtualAppliance",
+                            "nextHopIpAddress": "10.255.0.36"
+                        }
+                    }
+                ],
+                "disableBgpRoutePropagation": true
+            }
+        },
+
+        //Creating Hub and Spoke VNETS
+
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2019-11-01",
+            "name": "[parameters('virtualNetworkName')]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "Hub Virtual Network",
+                "Environment": "Production",
+                "Owner": "Network Operations",
+                "Contact": "noc@contoso.com"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('addressPrefix')]"
+                    ]
+
+                },
+                "dhcpOptions": {
+                    "dnsServers": "[parameters('DNSServerAddress')]"
+                },
+
+                "subnets": [
+                    {
+                        "name": "GatewaySubnet",
+                        "properties": {
+                            "addressPrefix": "[parameters('GwsubnetPrefix')]",
+                            "serviceEndpoints": [],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "[parameters('FirstSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('FirstsubnetPrefix')]",
+                            "serviceEndpoints": [
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "[parameters('SecondSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('SecondsubnetPrefix')]",
+                            "serviceEndpoints": [
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "[parameters('ThirdSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('ThirdsubnetPrefix')]",
+                            "serviceEndpoints": [
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "[parameters('FourthSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('FourthsubnetPrefix')]",
+                            "serviceEndpoints": [
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "[parameters('FifthSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('FifthsubnetPrefix')]",
+                            "serviceEndpoints": [
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    }
+
+                ]
+
+            },
+            "resources": [
+                // Creating Vnet Peerings
+                {
+                    "apiVersion": "2016-06-01",
+                    "type": "virtualNetworkPeerings",
+                    "name": "[variables('HubvNETtoProdvNETPeeringName')]",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('ProdvirtualNetworkName'))]"
+                    ],
+                    "comments": "This is the peering from HubVnet to the ProdVnet",
+                    "properties": {
+                        "allowVirtualNetworkAccess": "true",
+                        "allowForwardedTraffic": "false",
+                        "allowGatewayTransit": "false",
+                        "useRemoteGateways": "false",
+                        "remoteVirtualNetwork": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('ProdvirtualNetworkName'))]"
+                        }
+                    }
+                },
+                {
+                    "apiVersion": "2016-06-01",
+                    "type": "virtualNetworkPeerings",
+                    "name": "[variables('HubvNETtoDevvNETPeeringName')]",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('DevvirtualNetworkName'))]"
+                    ],
+                    "comments": "This is the peering from HubVnet to the ProdVnet",
+                    "properties": {
+                        "allowVirtualNetworkAccess": "true",
+                        "allowForwardedTraffic": "true",
+                        "allowGatewayTransit": "true",
+                        "useRemoteGateways": "false",
+                        "remoteVirtualNetwork": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('DevvirtualNetworkName'))]"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "[parameters('ProdvirtualNetworkName')]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2016-12-01",
+            "dependsOn": [
+            ],
+            "tags": {
+                "DisplayName": "Production VNET",
+                "Organization": "Network Operations",
+                "Contact": "noc@contoso.com",
+                "Environment": "Production"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('prodaddressPrefix')]"
+                    ]
+
+                },
+                "dhcpOptions": {
+
+                    "dnsServers": "[parameters('DNSServerAddress')]"
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('ProdFirstSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('ProdFirstSubnetPrefix')]",
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.AzureActiveDirectory",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.AzureCosmosDB",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.KeyVault",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.Storage",
+                                    "locations": [
+                                        "eastus",
+                                        "westus"
+                                    ]
+                                }
+
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+
+                        }
+                    },
+                    {
+                        "name": "[parameters('ProdSecondSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('ProdSecondSubnetPrefix')]",
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.AzureActiveDirectory",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.AzureCosmosDB",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.KeyVault",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.Storage",
+                                    "locations": [
+                                        "eastus",
+                                        "westus"
+                                    ]
+                                }
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "[parameters('ProdThirdSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('ProdThirdSubnetPrefix')]",
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.AzureActiveDirectory",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.AzureCosmosDB",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.KeyVault",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.Storage",
+                                    "locations": [
+                                        "eastus",
+                                        "westus"
+                                    ]
+                                }
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    }
+                ]
+            },
+            "resources": [
+                {
+                    "apiVersion": "2016-06-01",
+                    "type": "virtualNetworkPeerings",
+                    "name": "[variables('ProdvNettoHubvNetPeeringName')]",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('ProdvirtualNetworkName'))]"
+                    ],
+                    "comments": "This is the peering from the Prod VNET 2 to the Hub VNET",
+                    "properties": {
+                        "allowVirtualNetworkAccess": "true",
+                        "allowForwardedTraffic": "true",
+                        "allowGatewayTransit": "false",
+                        "useRemoteGateways": "false",
+                        "remoteVirtualNetwork": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "[parameters('DevvirtualNetworkName')]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2016-12-01",
+            "dependsOn": [],
+            "tags": {
+                "displayName": "Development VNET",
+                "Owner": "DevOps Team",
+                "Contact": "devops@contoso.com",
+                "Environment": "Development"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('devaddressprefix')]"
+
+                    ]
+
+                },
+                "dhcpOptions": {
+
+                    "dnsServers": "[parameters('DNSServerAddress')]"
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('DevFirstSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('DevFirstSubnetPrefix')]",
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.AzureActiveDirectory",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.AzureCosmosDB",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.KeyVault",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.Storage",
+                                    "locations": [
+                                        "eastus",
+                                        "westus"
+                                    ]
+                                }
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "[parameters('DevSecondSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('DevSecondSubnetPrefix')]",
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.AzureActiveDirectory",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.AzureCosmosDB",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.KeyVault",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.Storage",
+                                    "locations": [
+                                        "eastus",
+                                        "westus"
+                                    ]
+                                }
+
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "[parameters('DevThirdSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('DevThirdSubnetPrefix')]",
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.AzureActiveDirectory",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.AzureCosmosDB",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.KeyVault",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "eastus"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.Storage",
+                                    "locations": [
+                                        "eastus",
+                                        "westus"
+                                    ]
+                                }
+
+                            ],
+                            "delegations": [],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    }
+                ]
+            },
+            "resources": [
+                {
+                    "apiVersion": "2016-06-01",
+                    "type": "virtualNetworkPeerings",
+                    "name": "[variables('DevvNettoHubvNetPeeringName')]",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('DevvirtualNetworkName'))]"
+                    ],
+                    "comments": "This is the peering from the Dev VNET 2 to the Hub VNET",
+                    "properties": {
+                        "allowVirtualNetworkAccess": "true",
+                        "allowForwardedTraffic": "true",
+                        "allowGatewayTransit": "false",
+                        "useRemoteGateways": "false",
+                        "remoteVirtualNetwork": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "apiVersion": "2020-05-01",
+            "type": "Microsoft.Network/publicIpAddresses",
+            "name": "[parameters('BastionIP')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+        // Creating Azure Bastion Host
+        {
+            "apiVersion": "2020-05-01",
+            "type": "Microsoft.Network/bastionHosts",
+            "name": "[parameters('BastionHost')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIpAddresses', parameters('BastionIP'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
+
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "IpConf",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), 'AzureBastionSubnet')]"
+                            },
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIpAddresses', parameters('BastionIP'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        //Creating  Managed Identity for AKS, vnet,  and route table
+        {
+            "name": "[parameters('ManagedIdentity')]",
+            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+            "apiVersion": "2018-11-30",
+            "location": "[resourceGroup().location]"
+        },
+
+        //Insert appgw here
+        {
+            "type": "Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies",
+            "apiVersion": "2020-11-01",
+            "name": "[parameters('AppGWName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [],
+            "properties": {
+                "policySettings": {
+                    "requestBodyCheck": true,
+                    "maxRequestBodySizeInKb": 128,
+                    "fileUploadLimitInMb": 100,
+                    "state": "Enabled",
+                    "mode": "Detection"
+                },
+                "managedRules": {
+                    "managedRuleSets": [
+                        {
+                            "ruleSetType": "OWASP",
+                            "ruleSetVersion": "3.0"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/applicationGateways",
+            "apiVersion": "2020-11-01",
+            "name": "[parameters('AppGWName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('ProdvirtualNetworkName'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('AppGWNamePiP'))]",
+                "[resourceId('Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies',parameters('AppGWName'))]"
+            ],
+            "properties": {
+                "sku": {
+                    "name": "WAF_v2",
+                    "tier": "WAF_v2",
+                    "capacity": 2
+                },
+                "gatewayIPConfigurations": [
+                    {
+                        "name": "appGatewayIpConfig",
+                        "properties": {
+
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('ProdvirtualNetworkName'), parameters('ProdFirstSubnetName'))]"
+                            }
+                        }
+                    }
+
+                ],
+                "frontendIPConfigurations": [
+                    {
+                        "name": "appGatewayFrontendIP",
+                        "properties": {
+                            //    "privateIPAllocationMethod": "Dynamic",  //added for priv ip
+                            "PublicIPAddress": {
+                                // "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('AppGWNamePiP'))]"
+                                "id": "[variables('publicIPRef')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "AppGWPrivateIP",
+                        "properties": {
+                            "privateIPAddress": "10.254.0.10",
+                            "privateIPAllocationMethod": "Static",
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('ProdvirtualNetworkName'), parameters('ProdFirstSubnetName'))]"
+                            }
+                        }
+                    }
+                ],
+                "frontendPorts": [
+                    {
+                        "name": "appGatewayFrontendPort",
+                        "properties": {
+                            "Port": 8081
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "appGatewayBackendPool",
+                        "properties": {}
+                    }
+                ],
+                "backendHttpSettingsCollection": [
+                    {
+                        "name": "appGatewayBackendHttpSettings",
+                        "properties": {
+                            "Port": 8081,
+                            "Protocol": "Http",
+                            "CookieBasedAffinity": "Disabled",
+                            "requestTimeout": 20
+                        }
+                    }
+                ],
+                "httpListeners": [
+                    {
+                        "name": "appGatewayHttpListener",
+                        "properties": {
+                            "FrontendIPConfiguration": {
+                                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', parameters('AppGWName'), 'appGatewayFrontendIP')]"
+                            },
+                            "FrontendPort": {
+                                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',  parameters('AppGWName'), 'appGatewayFrontendPort')]"
+                            },
+                            "Protocol": "Http",
+                            "SslCertificate": null
+                        }
+                    }
+                ],
+                "requestRoutingRules": [
+                    {
+                        "Name": "ruleName",
+                        "properties": {
+                            "RuleType": "Basic",
+                            "httpListener": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', parameters('AppGWName'), 'appGatewayHttpListener')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', parameters('AppGWName'), 'appGatewayBackendPool')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parameters('AppGWName'), 'appGatewayBackendHttpSettings')]"
+                            }
+                        }
+                    }
+                ],
+                "firewallPolicy": {
+                    "id": "[resourceId('Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies',parameters('AppGWName'))]"
+                }
+            }
+        },
+
+
+        {
+            "apiVersion": "2020-08-01",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[parameters('AppGWNamePiP')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard"
+            },
+            // "zones": "[parameters('publicIpZones')]",
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+
+        {
+            "name": "[concat(parameters('WinServ'),'-NIC')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2020-11-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
+            ],
+            "tags": {
+                "displayName": "[concat(parameters('WinServ'),'-NIC')]"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipConfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('FifthSubnetName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[concat(parameters('WinServ'))]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2021-03-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('WinServ'),'-NIC') )]"
+            ],
+            "tags": {
+                "displayName": "[concat(parameters('WinServ'))]"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_B2ms"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('WinServ')]",
+                    "adminUsername": "[parameters('Username')]",
+                    "adminPassword": "[parameters('Password')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2019-Datacenter",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "[concat(parameters('WinServ'),'-OSDISK')]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "Standard_LRS"
+
+                        },
+                        "diskSizeGB": 127
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('WinServ'),'-NIC'))]"
+                        }
+                    ]
+                }
+
+            }
+        },
+
+        // Inserting Azure Firewall
+
+        {
+            "apiVersion": "2020-08-01",
+            "type": "Microsoft.Network/publicIpAddresses",
+            "name": "[parameters('FWPubIp')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            },
+            "tags": {}
+        },
+        {
+            "apiVersion": "2020-08-01",
+            "type": "Microsoft.Network/publicIpAddresses",
+            "name": "[parameters('FWPubIp2')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            },
+            "tags": {}
+        },
+        {
+            "apiVersion": "2020-11-01",
+            "type": "Microsoft.Network/firewallPolicies",
+            "resources": [],
+            "properties": {
+                "sku": {
+                    "tier": "[parameters('FWTier')]"
+                }
+            },
+            "name": "[parameters('FWPolName')]",
+            "location": "[parameters('FWPolLoc')]",
+            "tags": {}
+        },
+        {
+            "apiVersion": "2020-05-01",
+            "type": "Microsoft.Network/azureFirewalls",
+            "name": "[parameters('FWName')]",
+            "location": "[resourceGroup().location]",
+            "zones": "[if(equals(length(parameters('FwZones')), 0), json('null'), parameters('FwZones'))]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/publicIpAddresses/', parameters('FWPubIp2'))]",
+                "[concat('Microsoft.Network/virtualnetworks/', parameters('virtualNetworkName'))]",
+                "[concat('Microsoft.Network/firewallPolicies/', parameters('FWPolName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "[parameters('FWPubIp')]",
+                        "properties": {
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualnetworks/subnets',parameters('virtualNetworkName'),parameters('FirstSubnetName'))]"
+                            },
+                            "publicIpAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('FWPubIp'))]"
+                            }
+                        }
+                    }
+                ],
+                "sku": {
+                    "tier": "[parameters('FWTier')]"
+                },
+                "managementIpConfiguration": {
+                    "name": "[parameters('FWPubIp2')]",
+                    "properties": {
+                        "subnet": {
+                            "id": "[resourceId('Microsoft.Network/virtualnetworks/subnets',parameters('virtualNetworkName'),parameters('SecondSubnetName'))]"
+                        },
+                        "publicIPAddress": {
+                            "id": "[resourceId('Microsoft.Network/publicIpAddresses/', parameters('FWPubIp2'))]"
+                        }
+                    }
+                },
+                "firewallPolicy": {
+                    "id": "[resourceId('Microsoft.Network/firewallPolicies', parameters('FWPolName'))]"
+                }
+            },
+            "tags": {}
+        }
+
+
+        
+        
+    ]
+
+}
