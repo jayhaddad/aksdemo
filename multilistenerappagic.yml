@@ -1,0 +1,217 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aks-helloworld-one  
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aks-helloworld-one
+  template:
+    metadata:
+      labels:
+        app: aks-helloworld-one
+    spec:
+      containers:
+      - name: aks-helloworld-one
+        image: mcr.microsoft.com/azuredocs/aks-helloworld:v1
+        ports:
+        - containerPort: 80
+        env:
+        - name: TITLE
+          value: "Welcome to Azure Kubernetes Service (AKS)"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: serv-aks-helloworld-one  
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+  selector:
+    app: aks-helloworld-one
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aks-helloworld-two  
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aks-helloworld-two
+  template:
+    metadata:
+      labels:
+        app: aks-helloworld-two
+    spec:
+      containers:
+      - name: aks-helloworld-two
+        image: mcr.microsoft.com/azuredocs/aks-helloworld:v1
+        ports:
+        - containerPort: 80
+        env:
+        - name: TITLE
+          value: "AKS Ingress Demo"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: serv-aks-helloworld-two  
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+  selector:
+    app: aks-helloworld-two
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aks-helloworld-one
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/use-private-ip: "true"
+spec:
+  rules:
+  - host: appdemo.contoso.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: serv-aks-helloworld-one
+            port:
+              number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: serv-aks-helloworld-two
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/use-private-ip: "true"
+    appgw.ingress.kubernetes.io/backend-path-prefix: "/"
+spec:
+  rules:
+  - host: appdemo.contoso.com
+    http:
+      paths:
+      - path: /hello-world-two/*
+        pathType: Prefix
+        backend:
+          service:
+            name: serv-aks-helloworld-two
+            port:
+              number: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: second-aks-helloworld-one  
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: second-aks-helloworld-one
+  template:
+    metadata:
+      labels:
+        app: second-aks-helloworld-one
+    spec:
+      containers:
+      - name: second-aks-helloworld-one
+        image: mcr.microsoft.com/azuredocs/aks-helloworld:v1
+        ports:
+        - containerPort: 80
+        env:
+        - name: TITLE
+          value: "Second Welcome to Azure Kubernetes Service (AKS)"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: second-serv-aks-helloworld-one  
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+  selector:
+    app: second-aks-helloworld-one
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: second-aks-helloworld-two  
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: second-aks-helloworld-two
+  template:
+    metadata:
+      labels:
+        app: second-aks-helloworld-two
+    spec:
+      containers:
+      - name: second-aks-helloworld-two
+        image: mcr.microsoft.com/azuredocs/aks-helloworld:v1
+        ports:
+        - containerPort: 80
+        env:
+        - name: TITLE
+          value: "second-AKS Ingress Demo"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: second-serv-aks-helloworld-two  
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+  selector:
+    app: second-aks-helloworld-two
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: second-aks-helloworld-one
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/use-private-ip: "true"
+spec:
+  rules:
+  - host: secondappdemo.contoso.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: second-serv-aks-helloworld-one
+            port:
+              number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: second-serv-aks-helloworld-two
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/use-private-ip: "true"
+    appgw.ingress.kubernetes.io/backend-path-prefix: "/"
+spec:
+  rules:
+  - host: secondappdemo.contoso.com
+    http:
+      paths:
+      - path: /hello-world-two/*
+        pathType: Prefix
+        backend:
+          service:
+            name: second-serv-aks-helloworld-two
+            port:
+              number: 80
